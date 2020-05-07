@@ -6,7 +6,7 @@ import json
 
 def get_season_schedule(season):
 
-    """Returns a dataframe for any season after 1999
+    """Returns a dataframe for any season
 
     Args:
         season (int or string) - the season schedule to be scraped
@@ -26,10 +26,6 @@ def get_season_schedule(season):
         print(f'HttpError with status code: { err.response.status_code}')
         # Return an empty dataframe
         return pd.DataFrame()
-    
-    # this check will be removed once xml gets read in for prior szns
-    if int(season) < 2000:
-        raise Exception(f'ValueError: No data for season {season}. Season must be >=2000')
     
     return _prepare_schedule_df(resp.content)
 
