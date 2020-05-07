@@ -17,7 +17,7 @@ def get_season_schedule(season):
 
     if type(season) == int: season = str(season)
     
-    url = f"http://www.nfl.com/feeds-rs/schedules/{season}"
+    url = f"http://www.nfl.com/feeds-rs/schedules/{season}.json"
     headers={'User-Agent': 'Mozilla/5.0'}
     try:
         resp = requests.get(url, headers=headers)
