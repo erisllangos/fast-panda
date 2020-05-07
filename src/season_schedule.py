@@ -5,26 +5,77 @@ import json
 
 
 def get_season_schedule(season):
+
+    """Returns a dataframe for any season after 1999
+
+    Args:
+        season (int or string) - the season schedule to be scraped
+
+    Returns:
+        pandas.Dataframe: the dataframe for the selected season
+    """
+
     if type(season) == int: season = str(season)
     
-    url = "http://www.nfl.com/feeds-rs/schedules/"+season
+    url = f"http://www.nfl.com/feeds-rs/schedules/{season}"
+    headers={'User-Agent': 'Mozilla/5.0'}
     try:
-        resp = requests.get(url)
+        resp = requests.get(url, headers=headers)
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print("Looks like you have an error;", err)
-        return
+        print(f'HttpError with status code: { err.response.status_code}')
+        # Return an empty dataframe
+        return pd.DataFrame()
     
-    #this check will be removed once xml gets read in for prior szns
+    # this check will be removed once xml gets read in for prior szns
     if int(season) < 2000:
-        print("Sorry no data for seasons prior to 2000")
-        return
+        raise Exception(f'ValueError: No data for season {season}. Season must be >=2000')
+        
+    # df = pd.read_json(io.StringIO(json.loads(resp.content)))
+    # df = df['gameSchedules'].apply(pd.Series)
     
-    df=pd.read_json(io.StringIO(resp.content.decode('UTF-8')))
-    df=df['gameSchedules'].apply(pd.Series)
+    return _prepare_schedule_df(resp.content)
+
+def _prepare_schedule_df(schedule_response):
     
-    if df.empty:
-        print("Please put in a valid season. 2000-2019")
-        return
-    
-    return df
+    """
+    Private method to restructure the response object into the form we need
+
+    Args:
+        schedule_response (dict) - reponse json from the schedule request
+    Returns:
+        (pandas.Dataframe) - proper schedule representation
+    """
+    # Get array that is nested under gameSchedules
+    raw_schedules = json.loads(schedule_response)['gameSchedules']
+    schedules_rows = []
+
+    for schedule in raw_schedules:
+        try:
+            schedules_rows.append({
+                'season': schedule['season'],
+                'alt_game_id': f"{schedule['season']}_{schedule['week']:02d}_{schedule['homeTeamAbbr']}_{schedule['visitorTeamAbbr']}",
+                'game_date': schedule['isoTime'],
+                'home_team': schedule['homeTeamAbbr'],
+                'away_team': schedule['visitorTeamAbbr'],
+                'home_team_name': schedule['homeDisplayName'],
+                'away_team_name': schedule['visitorDisplayName'],
+                'home_nickname': schedule['homeNickname'],
+                'away_nickname': schedule['visitorNickname'],
+                'home_team_id': schedule['homeTeamId'],
+                'away_team_id': schedule['visitorTeamId'],
+                'game_type': schedule['gameType'],
+                'week_name': schedule['weekName'],
+                'site_city': schedule['site']['siteCity'],
+                'site_fullname': schedule['site']['siteFullname'],
+                'site_state': schedule['site']['siteState'],
+                'site_roof_type': schedule['site']['roofType']
+            })
+        except:
+            raise Exception('Error formatting dataframe')
+
+    print(schedules_rows[0])
+    return pd.DataFrame(schedules_rows)
+
+
+print(get_season_schedule(2001).to_csv('test.csv'))
