@@ -30,9 +30,6 @@ def get_season_schedule(season):
     # this check will be removed once xml gets read in for prior szns
     if int(season) < 2000:
         raise Exception(f'ValueError: No data for season {season}. Season must be >=2000')
-        
-    # df = pd.read_json(io.StringIO(json.loads(resp.content)))
-    # df = df['gameSchedules'].apply(pd.Series)
     
     return _prepare_schedule_df(resp.content)
 
@@ -74,8 +71,4 @@ def _prepare_schedule_df(schedule_response):
         except:
             raise Exception('Error formatting dataframe')
 
-    print(schedules_rows[0])
     return pd.DataFrame(schedules_rows)
-
-
-print(get_season_schedule(2001).to_csv('test.csv'))
